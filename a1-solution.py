@@ -174,13 +174,28 @@ def test_points(data_matrix, beta_hat):
 
 def linear_classifier(weight_vector):
     # Constructs a linear classifier
-    def classifier(input_matrix):
+    def classifier(input_matrix): # todo type numpy array?
         # Take the dot product of each sample ( data_matrix row ) with the weight_vector (col vector)
         # -- as defined in Hastie equation (2.2)
         row_count = input_matrix.shape[0]
 
+
         # REVISE: Always choose class 0
         scores_classes = np.zeros((row_count,2))
+
+
+        # matrix is set up [in,in,...out]
+        # so we need to strip out the last element of every row
+        # and make that a vector
+        # finally
+        # we need to do dot product (@) of vector and matrix minus the vector
+
+        # do we do this in place?
+        # do we remove the elements??????
+
+        # how do we know when we did it right?????
+
+
 
         # Return N x 2 result array
         return scores_classes
