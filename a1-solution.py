@@ -104,9 +104,25 @@ def draw_results(data_matrix, class_fn, title, file_name):
     ##################################
     # Decision boundary (black line)
     ##################################
+
+    #  TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
     # MISSING -- add code to draw class boundaries
     # ONE method for ALL classifier types
+    """
+        FOR LIN MODELS
+        you need to solve 
+            0.5 = X^ @ B
+                where X is UNKNOWN
+                B is the optimal beta derived from the input matrix X (not the X^ here)
+            
+            score (Y) = X^ @ B
+                is always 0.5 for lin model
+                
+        FOR KNN
+            above formula doesn't apply
+            
+    """
     pass
 
 
@@ -179,9 +195,75 @@ def linear_classifier(weight_vector):
         # -- as defined in Hastie equation (2.2)
         row_count = input_matrix.shape[0]
 
+        # NOTE: we have access to weight_vector, can call it directly
 
-        # REVISE: Always choose class 0
-        scores_classes = np.zeros((row_count,2))
+
+        # ---- Find the optimal beta vecotr
+        x = input_matrix # rename to match formula for clarity
+
+        # TODO YOU NEED TO DOSE X WITH A 1 IN LEFT COL, PUSH ALL RESULT RIGHT
+        x_t = x.transpose() # X^T
+
+        left_product = x_t @ x  # (X^T @ X)
+
+        left_inverse = np.linalg.inv(left_product) #(X^T @ X)^-1
+
+        # define y, is contained
+
+        # TODO DEF y
+
+        y = None # TODO FIX
+
+        right_product = x_t @ y
+
+        beta_vector = left_inverse @ right_product #B = (X^T @ X)^-1 @ (X^T @ y)
+
+        # ----- Find the result Y^
+
+        y_hat = x_t @ beta_vector # Y^ = X^T @ B, should be good as is
+
+
+        """
+                ok
+                B = (X^T @ X)^-1 @ (X^T @ y)
+                Y^ = X^T @ B
+                
+                outside of accomplishing the above (and dosing X with 1) there is no more logic needed
+          
+                    where y is the vector of all outputs
+                    
+                    lin models work by weighting the features (inputs) by the weights (beta vec)
+                    
+                    the hats on vars are just for differention, there's no specific concept implied           
+                    
+                    in the data setup, we always have N X 3 - 2 features map to one output
+                        last col is always output
+                        
+                    !!!
+                        bias must be accounted for in the X matrix
+                        for simplicity's sake, add the 1 to the first position, and copy all the values over        
+                        this must be done for EVERY APPEARANCE OF X
+
+                ...
+                
+                we also need to account for the bias?
+                strip output from each row, replace with 1s?
+                
+                
+                
+                TODO TODO
+                how do we know when we are done?
+                    100 percent recognition???
+                    how do we use the starter code
+                    
+                ----
+                lin class - needs to match 74 & 84,
+                knn should be 100 on training data, is fuzzy otherwise, just get close
+                    
+        """
+        score_classes = None # todo make this an answer
+
+
 
 
         # matrix is set up [in,in,...out]
@@ -190,10 +272,15 @@ def linear_classifier(weight_vector):
         # finally
         # we need to do dot product (@) of vector and matrix minus the vector
 
+        #...
+        #or is it? 
+
         # do we do this in place?
         # do we remove the elements??????
 
         # how do we know when we did it right?????
+
+        scores_classes = np.zeros((row_count,2))
 
 
 
@@ -205,8 +292,69 @@ def linear_classifier(weight_vector):
 
 def knn_classifier(k, data_matrix):
     # Constructs a knn classifier for the passed value of k and training data matrix
-    def classifier(input_matrix):
+    def classifier(input_matrix): # todo what is going on with this function? can we reach k?
+
+        # inputs are two var pairs. one feature per row 
         (input_count, _) = input_matrix.shape
+
+        """
+            what is the knn algo???
+            
+            Y^ (x: matrix, k: int) = ( 1/ k ) * SUM FROM (x_i IN N_k(x)) (y_i)
+            what does this mean??
+            
+            what is:
+                x_i 
+                    row of x?
+                N_k(x)
+                N
+                y_i
+                    output?
+                    
+                    ^^^^ IGNORE ALL OF THIS
+            -------
+                knn is just a geometric rep of probability, vals associated with 'good' spaces are assumed good
+                
+                k defs the size of that 'good' space - the 'neighborhood'
+                    k = num of neighbors
+                        always at least 1, 1 is the self
+                        
+                the algo is that we calc euclidean dist from the input to all other points in the training data
+                
+                ^^^^ there is no given algo for this
+                    you need to figure it out yourself
+                    
+                least squares does not relat eto this at all 
+                
+                you can do a distance matrix
+                    using euc dist formula
+                    
+                indexing is important
+                
+                to compare point 0 to point 4,
+                    go to row 4
+                        go to col 4
+                            calc or fetch the value
+                                calc w (x - a)^2 + (y - b)^2
+                                
+                get the k closest vals
+                fetch their values from the matrix (last col of row)
+                do ratio of True to False (training is binary scored)
+                
+                output is Wx2 matrix
+                    W is the number of input samples we are predicting on
+                    first col is the calc'd score
+                        second is the classified class (0 or 1)
+                        
+                    
+                    
+                                
+                
+            
+            
+            
+            
+        """
 
         # REVISE: Always choose class 1
         scores_classes = np.ones((input_count,2))
