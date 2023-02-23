@@ -8,6 +8,8 @@
 
 
 import argparse
+
+import numpy
 import numpy as np
 # import statistics as stats
 import matplotlib.pyplot as plt
@@ -122,6 +124,19 @@ def draw_results(data_matrix, class_fn, title, file_name):
         FOR KNN
             above formula doesn't apply
             
+            one method: if you run less than 10 seconds, no deductions
+                the resolution of the grid is NxM
+                for each point in the grid:
+                    predict on the point and get score for the point
+                    set a margin (make coeff of K?) where the point will be judged to be on the boundary
+                    plot the point as black
+                    
+                    
+                    ^^^ breaks down at k = 1
+                        observe the shift in class predictions compared to the previous point
+                        scan over the rows 
+                
+            
     """
     pass
 
@@ -194,34 +209,37 @@ def linear_classifier(weight_vector):
         # Take the dot product of each sample ( data_matrix row ) with the weight_vector (col vector)
         # -- as defined in Hastie equation (2.2)
         row_count = input_matrix.shape[0]
+        col_count = input_matrix.shape[1]
 
         # NOTE: we have access to weight_vector, can call it directly
 
 
-        # ---- Find the optimal beta vecotr
+        # ---- Find the optimal beta vector
         x = input_matrix # rename to match formula for clarity
 
-        # TODO YOU NEED TO DOSE X WITH A 1 IN LEFT COL, PUSH ALL RESULT RIGHT
+        # define y
+        y = x[:,-1] # Extract y (output) column from input matrix
+        # expunge y from input matrix
+        x = np.delete(x, col_count - 1, 1) # args: delete from x, at the [col_count - 1] index, a column.
+
+        # Dose x with a '1' in the leftmost column, needed to normalize with bias
+        filler_array = np.ones((row_count,1))
+        x = np.column_stack((filler_array, x))
+
+        # define transpose of x, 1 biasing included
         x_t = x.transpose() # X^T
 
         left_product = x_t @ x  # (X^T @ X)
 
         left_inverse = np.linalg.inv(left_product) #(X^T @ X)^-1
 
-        # define y, is contained
-
-        # TODO DEF y
-
-        y = None # TODO FIX
-
-        right_product = x_t @ y
+        right_product = x_t @ y # (X^T @ y)
 
         beta_vector = left_inverse @ right_product #B = (X^T @ X)^-1 @ (X^T @ y)
 
         # ----- Find the result Y^
 
-        y_hat = x_t @ beta_vector # Y^ = X^T @ B, should be good as is
-
+        y_hat = x @ beta_vector # Y^ = X^T @ B, should be good as is
 
         """
                 ok
@@ -244,75 +262,67 @@ def linear_classifier(weight_vector):
                         for simplicity's sake, add the 1 to the first position, and copy all the values over        
                         this must be done for EVERY APPEARANCE OF X
 
-                ...
-                
-                we also need to account for the bias?
-                strip output from each row, replace with 1s?
-                
-                
-                
-                TODO TODO
-                how do we know when we are done?
-                    100 percent recognition???
-                    how do we use the starter code
-                    
                 ----
                 lin class - needs to match 74 & 84,
                 knn should be 100 on training data, is fuzzy otherwise, just get close
                     
         """
-        score_classes = None # todo make this an answer
-
-
-
-
-        # matrix is set up [in,in,...out]
-        # so we need to strip out the last element of every row
-        # and make that a vector
-        # finally
-        # we need to do dot product (@) of vector and matrix minus the vector
-
-        #...
-        #or is it? 
-
-        # do we do this in place?
-        # do we remove the elements??????
-
-        # how do we know when we did it right?????
-
-        scores_classes = np.zeros((row_count,2))
-
-
 
         # Return N x 2 result array
-        return scores_classes
+        # TODO y_hat is currently one col, just the pred. we need another column, the score
+        # add another col to y_hat with the associated bin classes
+        # todo just break above 0.5
+
+        return y_hat
 
     return classifier
 
 
 def knn_classifier(k, data_matrix):
     # Constructs a knn classifier for the passed value of k and training data matrix
-    def classifier(input_matrix): # todo what is going on with this function? can we reach k?
+    def classifier(input_matrix):
 
         # inputs are two var pairs. one feature per row 
-        (input_count, _) = input_matrix.shape
+        (input_count, _) = input_matrix.shape # todo delete?
+        row_count = input_matrix.shape[0]
 
+        x_matrix = input_matrix #rename
+
+        # do the euclidean distance matrix
+        # first, copy the final y (output) column from each row
+        output_column = input_matrix[:, -1]
+
+        # create the distance matrix
+        distance_matrix = numpy.zeros((row_count,row_count)) # for N rows in the input matrix, create NxN dist matrix
+
+        for row_index in range(row_count):
+            row_element = x_matrix[row_index]
+            x = row_element[0]
+            y = row_element[1]
+
+            for comparison_index in range(row_count):
+                comparison_element = x_matrix[row_element]
+                a = comparison_element[0]
+                b = comparison_element[1]
+
+                distance = (x - a)^2 + (y - b)^2
+                distance_matrix[row_index][comparison_index] = distance
+
+
+        # now do K selections
+        # for each row
+        # get the K smallest selections
+        # reverse index the elements back to the source data
+        # extract the y (class) from the kth elements
+        # do majority vote from the classes to predict
         """
-            what is the knn algo???
-            
-            Y^ (x: matrix, k: int) = ( 1/ k ) * SUM FROM (x_i IN N_k(x)) (y_i)
-            what does this mean??
-            
-            what is:
-                x_i 
-                    row of x?
-                N_k(x)
-                N
-                y_i
-                    output?
-                    
-                    ^^^^ IGNORE ALL OF THIS
-            -------
+            ex: 4 0s, 6 1s -> predict this to be 1
+        """
+
+
+
+
+        """   -------
                 knn is just a geometric rep of probability, vals associated with 'good' spaces are assumed good
                 
                 k defs the size of that 'good' space - the 'neighborhood'
@@ -324,7 +334,7 @@ def knn_classifier(k, data_matrix):
                 ^^^^ there is no given algo for this
                     you need to figure it out yourself
                     
-                least squares does not relat eto this at all 
+                least squares does not relate eto this at all 
                 
                 you can do a distance matrix
                     using euc dist formula
@@ -345,19 +355,17 @@ def knn_classifier(k, data_matrix):
                     W is the number of input samples we are predicting on
                     first col is the calc'd score
                         second is the classified class (0 or 1)
-                        
                     
-                    
-                                
-                
-            
-            
-            
             
         """
 
+        # TODO ESTABLISH DISTANCE MATRIX
+
+
         # REVISE: Always choose class 1
         scores_classes = np.ones((input_count,2))
+
+        classified_matrix = np.array([[0,0],[0,0]]) # TODO populate this with data
         
 
         # Return N x 2 result array
