@@ -241,37 +241,15 @@ def linear_classifier(weight_vector):
 
         y_hat = x @ beta_vector # Y^ = X^T @ B, should be good as is
 
-        """
-                ok
-                B = (X^T @ X)^-1 @ (X^T @ y)
-                Y^ = X^T @ B
-                
-                outside of accomplishing the above (and dosing X with 1) there is no more logic needed
-          
-                    where y is the vector of all outputs
-                    
-                    lin models work by weighting the features (inputs) by the weights (beta vec)
-                    
-                    the hats on vars are just for differention, there's no specific concept implied           
-                    
-                    in the data setup, we always have N X 3 - 2 features map to one output
-                        last col is always output
-                        
-                    !!!
-                        bias must be accounted for in the X matrix
-                        for simplicity's sake, add the 1 to the first position, and copy all the values over        
-                        this must be done for EVERY APPEARANCE OF X
-
-                ----
-                lin class - needs to match 74 & 84,
-                knn should be 100 on training data, is fuzzy otherwise, just get close
-                    
-        """
-
-        # Return N x 2 result array
-        # TODO y_hat is currently one col, just the pred. we need another column, the score
-        # add another col to y_hat with the associated bin classes
-        # todo just break above 0.5
+        # Add the result as another column: If >=0.5, 1, else 0
+        y_hat = np.column_stack(
+            (y_hat, np.zeros(
+                    (y_hat.shape[0],1)
+                )
+            )
+        )
+        for score_index in range(y_hat.shape[0]):
+            y_hat[score_index][1] = 1 if y_hat[score_index][0] >= 0.5 else 0
 
         return y_hat
 

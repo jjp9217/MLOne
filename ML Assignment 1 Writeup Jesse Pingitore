@@ -1,0 +1,46 @@
+For my Linear Classifier:
+	The method that I used was as described as Hastie's 2.2, although with some modifications.
+	My mindset was 'get it done ugly', not 'half finish it elegantly'. There are certainly optimizations to be had,
+	but I don't want to put the cart before the horse. Since our input data is a matrix in format [X1, X2, Y],
+	I started by expunging the outputs from the input matrix and setting them in a Nx1 column vector.
+	I then added a bias column of 1s into the matrix, pushing the X1 and X2 feature rows rightwards one.
+	I then worked through the Hastie's formula for finding the optimal Beta vector. I'm more than certain there's a one
+	line solution, but I did it in small statements (like defining x_t = x.transpose()) for clarity. Once I had my
+	optimal beta vector given the input, I needed to prepare the output. Here, we expect a Nx2 matrix where the first
+	column contains the score for the corresponding feature in the input, and then the binary classification for that
+	score in the next row. I used an arbitrary choice to round upwards, so 0.5 exactly qualifies as a 1 output.
+	So, our transformation would look like this:
+	    [ [A,B,Y1],     [ [Score_1, Score_1_Class],
+	      [C,D,Y2] ] ->   [Score_2, Score_2_Class] ]
+
+	The confusion matrix output for this implementation reads as:
+	    Recognition rate (correct / inputs): 73.0 %
+
+            Confusion Matrix:
+                      0: Blue-True  1: Org-True
+        ---------------------------------------
+        0: Blue-Pred |          70           24
+        1: Org-Pred  |          30           76
+
+
+    I believe that this level of accuracy was permitted in this assignment. In statistical models, having accuracies
+    extremely close to 100 percent for large datasets either indicates a very restrained problem, or a very restrained
+    dataset.
+
+
+For KNN:
+
+
+For drawing my decision boundries:
+
+    For my linear classifer this was simple, as there was a closed form solution. I simply needed to solve
+    0.5 = X^ @ B, where B is the optimal Beta vector derived from my input matrix, and X^ was unknown. First, I
+    re-derived the optimal Beta from the input_data.
+
+    TODO FILL THE REST IN ONCE IT'S DONE
+
+    For my KNN classifier, I used the following method:
+        For the resolution of my graph, I computed the score of each point. This is, quite frankly an expensive and
+        awful way of doing it, but it's the only one that I can conceive of right now. If the score of the point came
+        within a certain margin, scaled by K (with a special case at k = 1), then we would color the point black,
+        simulating a crude decision boundary.
