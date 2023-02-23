@@ -42,5 +42,5 @@ For drawing my decision boundries:
     For my KNN classifier, I used the following method:
         For the resolution of my graph, I computed the score of each point. This is, quite frankly an expensive and
         awful way of doing it, but it's the only one that I can conceive of right now. If the score of the point came
-        within a certain margin, scaled by K (with a special case at k = 1), then we would color the point black,
+        within a certain margin of 0.5 (likely 0.45 to 0.55, inclusive), scaled by K (with a special case at k = 1), then we would color the point black,
         simulating a crude decision boundary.

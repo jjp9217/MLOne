@@ -111,6 +111,14 @@ def draw_results(data_matrix, class_fn, title, file_name):
     
     # MISSING -- add code to draw class boundaries
     # ONE method for ALL classifier types
+
+    if class_fn == linear_classifier: # todo - how do we do function comparisons?
+        pass
+        bound = 0.5
+        # we would need to reobtain the optimal beta vector, just copy the code as-is
+        # from there, not sure
+        # we need to find a closed-form solution to 0.5 = X @ B, but I don't think this question is even coherent
+
     """
         FOR LIN MODELS
         you need to solve 
@@ -262,9 +270,12 @@ def knn_classifier(k, data_matrix):
 
         # inputs are two var pairs. one feature per row 
         (input_count, _) = input_matrix.shape # todo delete?
-        row_count = input_matrix.shape[0]
 
-        x_matrix = input_matrix #rename
+        # TODO !!!!!!!!!!!!!!!!!!!! exactly what are we training on - the input_matrix, or the data_matrix?
+        x_matrix = data_matrix  # rename
+        row_count = x_matrix.shape[0]
+
+
 
         # do the euclidean distance matrix
         # first, copy the final y (output) column from each row
@@ -273,7 +284,7 @@ def knn_classifier(k, data_matrix):
         # create the distance matrix
         distance_matrix = numpy.zeros((row_count,row_count)) # for N rows in the input matrix, create NxN dist matrix
 
-        for row_index in range(row_count):
+        for row_index in range(row_count): # FORM THE DISTANCE MATRIX FROM X MATRIX
             row_element = x_matrix[row_index]
             x = row_element[0]
             y = row_element[1]
@@ -285,6 +296,36 @@ def knn_classifier(k, data_matrix):
 
                 distance = (x - a)^2 + (y - b)^2
                 distance_matrix[row_index][comparison_index] = distance
+
+
+        for i in range(0,row_count): # EXTRACT K ITEMS FROM THE DISTANCE MATRIX
+            row = distance_matrix[i] # extract a row to work on
+            k_array = []
+            for item in row:
+                if len(k_array) == k: # can we fit this item in?
+                    k_max = max(k_array)
+                    if item < k_max: # if this value is smaller than the largest element, we can fit it in
+                        k_array.remove(max(k_array)) # take off the largest item
+                        k_array.append(item)
+
+                else:
+                    k_array.append(item)
+
+            # now get the index of each item to link back to the input data
+
+            class_array = []
+            for item in k_array: # CLASS COMPARE THE K ARRAY
+                item_index = row.index(item)
+                # TODO reevaluate once we have the data/input confusion clarified
+
+                # TODO - I don't have sufficient information to determine what to do.
+                """
+                    We going to, presumably have pairs of coordinates to predict upon. 
+                    I have no way as of 10PM 2-22-23 to disambiguate which matrix actually contains this data.
+                """
+
+                # now we have the (i,j) coordinate. we know where in the orinal matrix this value is.
+
 
 
         # now do K selections
