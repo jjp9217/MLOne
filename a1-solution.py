@@ -211,43 +211,53 @@ def test_points(data_matrix, beta_hat):
 # Classifiers
 ################################################################
 
-def linear_classifier(weight_vector):
+def optimal_beta_finder(input_matrix):
+    row_count = input_matrix.shape[0]
+    col_count = input_matrix.shape[1]
+
+    # The beta vector holds N weights (feature coefficients) and ONE bias element
+
+    # ---- Find the optimal beta vector
+    x = input_matrix  # rename to match formula for clarity
+
+    # define y
+    y = x[:, -1]  # Extract y (output) column from input matrix
+    # expunge y from input matrix
+    x = np.delete(x, col_count - 1, 1)  # args: delete from x, at the [col_count - 1] index, a column.
+
+    # Dose x with a '1' in the leftmost column, needed to normalize with bias
+    filler_array = np.ones((row_count, 1))
+    x = np.column_stack((filler_array, x))
+
+    # define transpose of x, 1 biasing included
+    x_t = x.transpose()  # X^T
+
+    left_product = x_t @ x  # (X^T @ X)
+
+    left_inverse = np.linalg.inv(left_product)  # (X^T @ X)^-1
+
+    right_product = x_t @ y  # (X^T @ y)
+
+    beta_vector = left_inverse @ right_product  # B = (X^T @ X)^-1 @ (X^T @ y)
+
+    return beta_vector
+
+def linear_classifier(weight_vector): # weight vector = beta vector
     # Constructs a linear classifier
-    def classifier(input_matrix): # todo type numpy array?
+    def classifier(input_matrix):
         # Take the dot product of each sample ( data_matrix row ) with the weight_vector (col vector)
         # -- as defined in Hastie equation (2.2)
-        row_count = input_matrix.shape[0]
-        col_count = input_matrix.shape[1]
 
-        # NOTE: we have access to weight_vector, can call it directly
-
-
-        # ---- Find the optimal beta vector
-        x = input_matrix # rename to match formula for clarity
-
-        # define y
-        y = x[:,-1] # Extract y (output) column from input matrix
-        # expunge y from input matrix
-        x = np.delete(x, col_count - 1, 1) # args: delete from x, at the [col_count - 1] index, a column.
-
-        # Dose x with a '1' in the leftmost column, needed to normalize with bias
-        filler_array = np.ones((row_count,1))
-        x = np.column_stack((filler_array, x))
-
-        # define transpose of x, 1 biasing included
-        x_t = x.transpose() # X^T
-
-        left_product = x_t @ x  # (X^T @ X)
-
-        left_inverse = np.linalg.inv(left_product) #(X^T @ X)^-1
-
-        right_product = x_t @ y # (X^T @ y)
-
-        beta_vector = left_inverse @ right_product #B = (X^T @ X)^-1 @ (X^T @ y)
 
         # ----- Find the result Y^
+        col_count = input_matrix.shape[1]
+        x = np.delete(input_matrix, col_count - 1, 1) # Expunge final column (output), leave only features
 
-        y_hat = x @ beta_vector # Y^ = X^T @ B, should be good as is
+        row_count = input_matrix.shape[0] # fill the left column with 1s s.t. weight vector has compatible dimensions
+        filler_array = np.ones((row_count, 1))
+        x = np.column_stack((filler_array, x))
+
+        y_hat = x @ weight_vector # Y^ = X^T @ B, should be good as is
 
         # Add the result as another column: If >=0.5, 1, else 0
         y_hat = np.column_stack(
@@ -264,19 +274,18 @@ def linear_classifier(weight_vector):
     return classifier
 
 
-def knn_classifier(k, data_matrix):
+def knn_classifier(k, data_matrix): # Data matrix is the training dat
     # Constructs a knn classifier for the passed value of k and training data matrix
     def classifier(input_matrix):
 
         # inputs are two var pairs. one feature per row 
         (input_count, _) = input_matrix.shape # todo delete?
 
-        # TODO !!!!!!!!!!!!!!!!!!!! exactly what are we training on - the input_matrix, or the data_matrix?
-        x_matrix = data_matrix  # rename
+        x_matrix = data_matrix # rename for clarity, data_matrix is the training data
         row_count = x_matrix.shape[0]
 
-
-
+        prediction_matrix = input_matrix # rename for clarity
+        prediction_count = prediction_matrix.shape[0]
         # do the euclidean distance matrix
         # first, copy the final y (output) column from each row
         output_column = input_matrix[:, -1]
@@ -285,7 +294,7 @@ def knn_classifier(k, data_matrix):
         distance_matrix = numpy.zeros((row_count,row_count)) # for N rows in the input matrix, create NxN dist matrix
 
         for row_index in range(row_count): # FORM THE DISTANCE MATRIX FROM X MATRIX
-            row_element = x_matrix[row_index]
+            row_element = x_matrix[row_index] # TODO EXPERIMENT: USE THE TEST DATA, NOT TRAINING
             x = row_element[0]
             y = row_element[1]
 
@@ -298,33 +307,20 @@ def knn_classifier(k, data_matrix):
                 distance_matrix[row_index][comparison_index] = distance
 
 
-        for i in range(0,row_count): # EXTRACT K ITEMS FROM THE DISTANCE MATRIX
-            row = distance_matrix[i] # extract a row to work on
-            k_array = []
-            for item in row:
-                if len(k_array) == k: # can we fit this item in?
-                    k_max = max(k_array)
-                    if item < k_max: # if this value is smaller than the largest element, we can fit it in
-                        k_array.remove(max(k_array)) # take off the largest item
-                        k_array.append(item)
+        prediction_matrix = input_matrix
+        for pred_item in prediction_matrix: # EXTRACT K ITEMS FROM THE DISTANCE MATRIX
+            for i in range(0,row_count):
 
-                else:
-                    k_array.append(item)
+                row = distance_matrix[i] # extract a row to work on
+                row.sort()
+                k_array = row[0:k]
 
-            # now get the index of each item to link back to the input data
+                class_sum = 0 #
+                for item in k_array: # REVERSE MAP BACK TO THE TRAINING DATA FROM THESE POINTS
+                    item_index = row.index(item)
 
-            class_array = []
-            for item in k_array: # CLASS COMPARE THE K ARRAY
-                item_index = row.index(item)
-                # TODO reevaluate once we have the data/input confusion clarified
 
-                # TODO - I don't have sufficient information to determine what to do.
-                """
-                    We going to, presumably have pairs of coordinates to predict upon. 
-                    I have no way as of 10PM 2-22-23 to disambiguate which matrix actually contains this data.
-                """
 
-                # now we have the (i,j) coordinate. we know where in the orinal matrix this value is.
 
 
 
@@ -411,7 +407,10 @@ def main():
     )
 
     # Construct linear classifier
-    lc = linear_classifier(np.array([1,1,1]))
+    # finds optimal beta --- NOTE: USE YOUR OWN FUNCTION HERE !!!!!!!!!!!
+    optimal_beta = optimal_beta_finder(data_matrix)
+    # lc = linear_classifier(np.array([1,1,1]))  # original code, replace the array with the optimal beta
+    lc = linear_classifier(optimal_beta)
     lsc_out = lc(data_matrix)
 
     # Compute results on training set
