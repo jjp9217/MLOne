@@ -244,32 +244,57 @@ def optimal_beta_finder(input_matrix):
 
 def linear_classifier(weight_vector): # weight vector = beta vector
     # Constructs a linear classifier
+
     def classifier(input_matrix):
         # Take the dot product of each sample ( data_matrix row ) with the weight_vector (col vector)
         # -- as defined in Hastie equation (2.2)
 
 
         # ----- Find the result Y^
+        row_count = input_matrix.shape[0]
         col_count = input_matrix.shape[1]
-        x = np.delete(input_matrix, col_count - 1, 1) # Expunge final column (output), leave only features
 
-        row_count = input_matrix.shape[0] # fill the left column with 1s s.t. weight vector has compatible dimensions
+        # NOTE: we have access to weight_vector, can call it directly
+
+        # ---- Find the optimal beta vector
+        x = input_matrix  # rename to match formula for clarity
+
+        # define y
+        y = x[:, -1]  # Extract y (output) column from input matrix
+        # expunge y from input matrix
+        x = np.delete(x, col_count - 1, 1)  # args: delete from x, at the [col_count - 1] index, a column.
+
+        # Dose x with a '1' in the leftmost column, needed to normalize with bias
         filler_array = np.ones((row_count, 1))
         x = np.column_stack((filler_array, x))
 
-        y_hat = x @ weight_vector # Y^ = X^T @ B, should be good as is
+        # define transpose of x, 1 biasing included
+        x_t = x.transpose()  # X^T
+
+        left_product = x_t @ x  # (X^T @ X)
+
+        left_inverse = np.linalg.inv(left_product)  # (X^T @ X)^-1
+
+        right_product = x_t @ y  # (X^T @ y)
+
+        beta_vector = weight_vector  # B = (X^T @ X)^-1 @ (X^T @ y)
+
+        # ----- Find the result Y^
+
+        y_hat = x @ beta_vector  # Y^ = X^T @ B, should be good as is
 
         # Add the result as another column: If >=0.5, 1, else 0
         y_hat = np.column_stack(
             (y_hat, np.zeros(
-                    (y_hat.shape[0],1)
-                )
+                (y_hat.shape[0], 1)
             )
+             )
         )
         for score_index in range(y_hat.shape[0]):
             y_hat[score_index][1] = 1 if y_hat[score_index][0] >= 0.5 else 0
 
         return y_hat
+
 
     return classifier
 
