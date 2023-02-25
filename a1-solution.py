@@ -218,10 +218,11 @@ def optimal_beta_finder(input_matrix):
     col_count = input_matrix.shape[1]
 
     # ---- Find the optimal beta vector
-    x = input_matrix  # rename to match formula for clarity
+    x = numpy.matrix.copy(input_matrix)  # Don't harm the data
 
     # define y
     y = x[:, -1]  # Extract y (output) column from input matrix
+
     # expunge y from input matrix
     x = np.delete(x, col_count - 1, 1)  # args: delete from x, at the [col_count - 1] index, a column.
 
@@ -238,9 +239,10 @@ def optimal_beta_finder(input_matrix):
 
     right_product = x_t @ y  # (X^T @ y)
 
-    return left_inverse @ right_product  # B = (X^T @ X)^-1 @ (X^T @ y)
+    beta = left_inverse @ right_product  # B = (X^T @ X)^-1 @ (X^T @ y)
 
-    # ----- Find the result Y^
+    return beta
+
 
 def linear_classifier(weight_vector): # weight vector = beta vector
     # Constructs a linear classifier
@@ -251,33 +253,29 @@ def linear_classifier(weight_vector): # weight vector = beta vector
         row_count = input_matrix.shape[0]
         col_count = input_matrix.shape[1]
 
+        # print("start:",input_matrix.shape)
+
         # NOTE: we have access to weight_vector, can call it directly
 
 
         # ---- Find the optimal beta vector
-        x = input_matrix # rename to match formula for clarity
+        x = numpy.matrix.copy(input_matrix) # Don't harm the original data.
 
-        # define y
-        y = x[:,-1] # Extract y (output) column from input matrix
         # expunge y from input matrix
-        x = np.delete(x, col_count - 1, 1) # args: delete from x, at the [col_count - 1] index, a column.
+        if x.shape[1] == 3:
+            x = np.delete(x, col_count - 1, 1) # args: delete from x, at the [col_count - 1] index, a column.
+            # print("deleted col:", x.shape)
 
-        # Dose x with a '1' in the leftmost column, needed to normalize with bias
+        # # Dose x with a '1' in the leftmost column, needed to normalize with bias
         filler_array = np.ones((row_count,1))
         x = np.column_stack((filler_array, x))
+        # print("filled col:",x.shape)
 
-        # define transpose of x, 1 biasing included
-        x_t = x.transpose() # X^T
-
-        left_product = x_t @ x  # (X^T @ X)
-
-        left_inverse = np.linalg.inv(left_product) #(X^T @ X)^-1
-
-        right_product = x_t @ y # (X^T @ y)
-
-        beta_vector = left_inverse @ right_product #B = (X^T @ X)^-1 @ (X^T @ y)
 
         # ----- Find the result Y^
+
+        # print('shape of x:', x.shape)
+        # print('shape of beta:', weight_vector.shape)
 
         y_hat = x @ weight_vector # Y^ = X^T @ B, should be good as is
 
@@ -300,41 +298,72 @@ def knn_classifier(k, data_matrix): # Data matrix is the training dat
     # Constructs a knn classifier for the passed value of k and training data matrix
     def classifier(input_matrix):
 
+
+        # Setup names and aliases
         training_data = data_matrix # rename for clarity, data_matrix is the training data
         prediction_matrix = input_matrix # rename for clarity
         prediction_row_count = prediction_matrix.shape[0]
         training_row_count = training_data.shape[0]
 
+        # Initialize data structures
+        distance_matrix = numpy.zeros((prediction_row_count,prediction_row_count)) # dist matrix,
+        k_matrix = numpy.zeros((prediction_row_count,k)) #holds the k selections per predict case
 
-        output_column = input_matrix[:, -1]
+        # [calculated score, classification]. Returned item.
+        k_classification = numpy.zeros((prediction_row_count, 2))
 
+        map_distance_classification = {} # Map calculated distance to the classification
 
-        distance_matrix = numpy.zeros((prediction_row_count,prediction_row_count))
-        k_matrix = numpy.zeros((prediction_row_count,k)) #k entries per prediction
-        k_classification = numpy.zeros((prediction_row_count, 2)) # calculated score, classification binary (0 or 1)
-
+        # Begin nearest neighbored classification - one of these loops = one prediction processed
         for prediction_index in range(0, prediction_row_count): # for each row, calc dist to each point in training_data
 
-            pred_item = prediction_matrix[prediction_index]
-            pred_x = pred_item[0]
-            pred_y = pred_item[1]
+            # Extract features to predict upon
+            pred_x = prediction_matrix[prediction_index][0]
+            pred_y = prediction_matrix[prediction_index][1]
 
+
+
+            # Iterate over all training data.
             for training_index in range(training_row_count):
-                training_item = training_data[training_index]
-                training_x = training_item[0]
-                training_y = training_item[1]
+                # Extract features and output from training data sample
+                training_x = training_data[training_index][0]
+                training_y = training_data[training_index][1]
+                training_item_classification = training_data[training_index][2]
 
-                distance = (pred_x -training_x)^2 + (pred_y - training_y)^2
-                distance_matrix[prediction_index][training_index] = distance
+                # Calculate Euclidean Distance
+                distance = (pred_x -training_x)**2 + (pred_y - training_y)**2
+                distance_matrix[prediction_index][training_index] = distance # Store distance
 
-            distance_matrix[prediction_index].sort() # makes getting k easier
-            k_selections = distance_matrix[0:k]
-            k_sum = sum(k_selections) / k
+                # Map the calculated distance to the classification
+                map_distance_classification[distance] = training_item_classification # TODO on loop 199, something is bad with the key
 
-            classification = 1 if k_sum >= 0.5 else 0
 
-            k_matrix[prediction_index] =  k_selections # copy 0 to kth vals into the matrix
-            k_classification[prediction_index][0] = k_sum
+            # Sort the calculated distance to be able to slice out k items
+            distance_matrix[prediction_index].sort()
+
+            # Slice out k items
+            k_selections = distance_matrix[prediction_index][0:k]
+
+            # Need to undo mapping, correlate the distances back to their training sample
+            selected_k_classifications = []
+            for c in k_selections:
+                try:
+                    selected_k_classifications.append(map_distance_classification[c])
+                except KeyError as e:
+                    print(e)
+
+
+            # Sum the classifications - this is just adding 1s and 0s
+            k_score = sum(selected_k_classifications)
+
+            # If the mean class in the k set is 0.5 or greater, predict this item to be true, else false
+            classification = 1 if k_score >= 0.5 else 0
+
+            # Copy the k selections into a greater matrix for storage
+            k_matrix[prediction_index] =  k_selections
+
+            # Fill the output matrix - 0th column is the mean classification of the k selections, 1st is the prediction
+            k_classification[prediction_index][0] = k_score
             k_classification[prediction_index][1] = classification
 
         return k_classification
