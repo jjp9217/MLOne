@@ -113,11 +113,36 @@ def draw_results(data_matrix, class_fn, title, file_name):
     # ONE method for ALL classifier types
 
     if class_fn == linear_classifier: # todo - how do we do function comparisons?
-        pass
+
         bound = 0.5
-        # we would need to reobtain the optimal beta vector, just copy the code as-is
-        # from there, not sure
+        optimal_beta = optimal_beta_finder(data_matrix)
+        pass
         # we need to find a closed-form solution to 0.5 = X @ B, but I don't think this question is even coherent
+
+    """
+        TODO LIST
+        talk about lin
+            make sure it's accurate
+        talk about KNN
+            possible error
+                why is it spitting 0s?
+                need to walk through 
+        talk about plotter
+            see if I can do lin
+            cut losses with KNN, too time consuming
+        talk about HW2
+        talk about learning strats
+            more office time
+            1x1 discussions
+            re-iteration and examples of formulas and classwork
+                I NEED to understand clearly what needs to be done
+                My skills at disambiguation in the subject matter are poor
+        Explain weaknesses
+            Lin and Stats basically don't exist
+            
+        Why did I get 0.7 points on the last PSS?
+            I can't collaborate when I'm behind conceptually
+    """
 
     """
         FOR LIN MODELS
@@ -146,7 +171,7 @@ def draw_results(data_matrix, class_fn, title, file_name):
                 
             
     """
-    pass
+
 
 
     ##################################
